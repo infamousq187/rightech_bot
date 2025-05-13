@@ -22,6 +22,9 @@ public class RightechService {
     private final RightechConfig rightechConfig;
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private static final int MAX_MESSAGE_LENGTH = 3000; // Уменьшаем лимит для надежности
+    private static final int MAX_DEVICES_PER_MESSAGE = 5; // Уменьшаем количество устройств в сообщении
+
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + rightechConfig.getToken());
@@ -37,19 +40,29 @@ public class RightechService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
             JSONArray objects = new JSONArray(response.getBody());
+            log.info("Received {} objects from API", objects.length());
+            
             List<String> messages = new ArrayList<>();
             StringBuilder currentMessage = new StringBuilder("Доступные устройства:\n");
             int deviceCount = 0;
+            int messageCount = 1;
             
             for (int i = 0; i < objects.length(); i++) {
                 JSONObject object = objects.getJSONObject(i);
-                String deviceInfo = "- " + object.getString("name") + 
-                                  " (ID: " + object.getString("id") + ")\n";
+                String deviceInfo = String.format("%d. %s (ID: %s)\n", 
+                    i + 1,
+                    object.getString("name"),
+                    object.getString("id"));
                 
-                // Если добавление нового устройства превысит лимит или достигнем 10 устройств
-                if (currentMessage.length() + deviceInfo.length() > 4000 || deviceCount >= 10) {
-                    messages.add(currentMessage.toString());
-                    currentMessage = new StringBuilder("Доступные устройства (продолжение):\n");
+                log.debug("Device info length: {}", deviceInfo.length());
+                
+                // Если добавление нового устройства превысит лимит или достигнем MAX_DEVICES_PER_MESSAGE
+                if (currentMessage.length() + deviceInfo.length() > MAX_MESSAGE_LENGTH || deviceCount >= MAX_DEVICES_PER_MESSAGE) {
+                    String message = currentMessage.toString();
+                    log.info("Adding message {} with length {}", messageCount, message.length());
+                    messages.add(message);
+                    messageCount++;
+                    currentMessage = new StringBuilder(String.format("Доступные устройства (часть %d):\n", messageCount));
                     deviceCount = 0;
                 }
                 
@@ -59,11 +72,18 @@ public class RightechService {
             
             // Добавляем последнее сообщение, если оно не пустое
             if (currentMessage.length() > 0) {
-                messages.add(currentMessage.toString());
+                String message = currentMessage.toString();
+                log.info("Adding final message {} with length {}", messageCount, message.length());
+                messages.add(message);
             }
             
             if (messages.isEmpty()) {
                 messages.add("Устройства не найдены");
+            }
+            
+            log.info("Total messages to send: {}", messages.size());
+            for (int i = 0; i < messages.size(); i++) {
+                log.info("Message {} length: {}", i + 1, messages.get(i).length());
             }
             
             return messages;

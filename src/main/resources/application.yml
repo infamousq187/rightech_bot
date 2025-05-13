@@ -10,4 +10,7 @@ telegram:
 
 logging:
   level:
-    tgbot.rightech_bot: DEBUG 
+    root: INFO
+    tgbot.rightech_bot: DEBUG
+    org.springframework.web: DEBUG
+    org.telegram.telegrambots: DEBUG 
