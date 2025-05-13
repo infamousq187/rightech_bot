@@ -26,7 +26,7 @@ public class RightechBot extends TelegramLongPollingBot {
     private String botToken;
 
     private final RightechService rightechService;
-    private static final String LIGHT_ID = "682304b520b46dbb6c1f6af6"; // ID фонаря в системе Rightech
+    private static final String LIGHT_ID = "urfu-project"; // ID фонаря в системе Rightech
 
     public RightechBot(@Value("${telegram.bot.token}") String botToken, RightechService rightechService) {
         super(botToken);
