@@ -42,7 +42,8 @@ public class RightechService {
 
     private boolean checkProjectAccess() {
         try {
-            String url = rightechConfig.getApiUrl() + "/v1/projects/" + rightechConfig.getProjectId();
+            // Проверяем доступ через список объектов проекта
+            String url = rightechConfig.getApiUrl() + "/v1/objects?project=" + rightechConfig.getProjectId() + "&limit=1";
             log.info("Checking project access. URL: {}", url);
             
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
@@ -64,7 +65,7 @@ public class RightechService {
                 return List.of("Ошибка доступа к проекту. Проверьте project ID и права доступа токена.");
             }
 
-            String url = rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100";
+            String url = rightechConfig.getApiUrl() + "/v1/objects?project=" + rightechConfig.getProjectId() + "&limit=100";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -119,7 +120,7 @@ public class RightechService {
             return messages;
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects?project=" + rightechConfig.getProjectId() + "&limit=100");
             log.error("Headers: {}", createHeaders());
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
