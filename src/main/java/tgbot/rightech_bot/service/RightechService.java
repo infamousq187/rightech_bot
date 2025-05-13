@@ -65,8 +65,8 @@ public class RightechService {
                 return List.of("Ошибка доступа к проекту. Проверьте project ID и права доступа токена.");
             }
 
-            // Получаем список устройств через /things
-            String url = rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100";
+            // Получаем список устройств через /objects/{projectId}/things
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/things?limit=100";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -121,7 +121,7 @@ public class RightechService {
             return messages;
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/things?limit=100");
             log.error("Headers: {}", createHeaders());
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
