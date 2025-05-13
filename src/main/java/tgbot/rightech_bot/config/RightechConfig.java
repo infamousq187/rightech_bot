@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class RightechConfig {
-    private String apiUrl = "https://rightech.io/api/v1";
+    private String apiUrl = "https://dev.rightech.io/api/v1";
     private String token;
     private String projectId;
 } 
