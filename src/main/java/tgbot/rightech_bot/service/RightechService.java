@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import tgbot.rightech_bot.config.RightechConfig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,7 +29,7 @@ public class RightechService {
         return headers;
     }
 
-    public String getProjectObjects() {
+    public List<String> getProjectObjects() {
         try {
             String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId();
             log.info("Requesting URL: {}", url);
@@ -34,18 +37,39 @@ public class RightechService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
             JSONArray objects = new JSONArray(response.getBody());
-            StringBuilder result = new StringBuilder("Доступные устройства:\n");
+            List<String> messages = new ArrayList<>();
+            StringBuilder currentMessage = new StringBuilder("Доступные устройства:\n");
+            int deviceCount = 0;
             
             for (int i = 0; i < objects.length(); i++) {
                 JSONObject object = objects.getJSONObject(i);
-                result.append("- ").append(object.getString("name"))
-                      .append(" (ID: ").append(object.getString("id")).append(")\n");
+                String deviceInfo = "- " + object.getString("name") + 
+                                  " (ID: " + object.getString("id") + ")\n";
+                
+                // Если добавление нового устройства превысит лимит или достигнем 10 устройств
+                if (currentMessage.length() + deviceInfo.length() > 4000 || deviceCount >= 10) {
+                    messages.add(currentMessage.toString());
+                    currentMessage = new StringBuilder("Доступные устройства (продолжение):\n");
+                    deviceCount = 0;
+                }
+                
+                currentMessage.append(deviceInfo);
+                deviceCount++;
             }
             
-            return result.toString();
+            // Добавляем последнее сообщение, если оно не пустое
+            if (currentMessage.length() > 0) {
+                messages.add(currentMessage.toString());
+            }
+            
+            if (messages.isEmpty()) {
+                messages.add("Устройства не найдены");
+            }
+            
+            return messages;
         } catch (Exception e) {
             log.error("Error getting project objects. URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId(), e);
-            return "Ошибка получения списка устройств: " + e.getMessage();
+            return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
     }
 
