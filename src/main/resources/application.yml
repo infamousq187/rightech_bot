@@ -3,6 +3,11 @@ rightech:
   token: ${RIGHTECH_TOKEN:your-token-here}
   project-id: ${RIGHTECH_PROJECT_ID:your-project-id-here}
 
+telegram:
+  bot:
+    username: ${TELEGRAM_BOT_USERNAME:rightechProject_bot}
+    token: ${TELEGRAM_BOT_TOKEN:7432499710:AAGBV6llMQWi18WN8bWY2f7i84US2L1Mx7U}
+
 logging:
   level:
     tgbot.rightech_bot: DEBUG 

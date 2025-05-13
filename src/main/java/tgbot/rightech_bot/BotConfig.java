@@ -12,7 +12,7 @@ public class BotConfig {
 
     @Bean
     public RightechBot rightechBot(RightechService rightechService) {
-        RightechBot bot = new RightechBot("rightechProject_bot", "7432499710:AAGBV6llMQWi18WN8bWY2f7i84US2L1Mx7U", rightechService);
+        RightechBot bot = new RightechBot(rightechService);
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(bot);

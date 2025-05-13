@@ -2,6 +2,7 @@ package tgbot.rightech_bot;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,14 +15,16 @@ import tgbot.rightech_bot.service.RightechService;
 @Component
 public class RightechBot extends TelegramLongPollingBot {
 
-    private final String botUsername;
-    private final String botToken;
+    @Value("${telegram.bot.username}")
+    private String botUsername;
+
+    @Value("${telegram.bot.token}")
+    private String botToken;
+
     private final RightechService rightechService;
     private static final String LIGHT_ID = "light1"; // ID фонаря в системе Rightech
 
-    public RightechBot(String botUsername, String botToken, RightechService rightechService) {
-        this.botUsername = botUsername;
-        this.botToken = botToken;
+    public RightechBot(RightechService rightechService) {
         this.rightechService = rightechService;
     }
 
