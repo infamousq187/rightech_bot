@@ -40,9 +40,31 @@ public class RightechService {
         return message;
     }
 
+    private boolean checkProjectAccess() {
+        try {
+            String url = rightechConfig.getApiUrl() + "/v1/projects/" + rightechConfig.getProjectId();
+            log.info("Checking project access. URL: {}", url);
+            
+            HttpEntity<String> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            
+            log.debug("Project check response status: {}", response.getStatusCode());
+            log.debug("Project check response body: {}", response.getBody());
+            
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.error("Error checking project access: {}", e.getMessage());
+            return false;
+        }
+    }
+
     public List<String> getProjectObjects() {
         try {
-            String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100";
+            if (!checkProjectAccess()) {
+                return List.of("Ошибка доступа к проекту. Проверьте project ID и права доступа токена.");
+            }
+
+            String url = rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -97,7 +119,7 @@ public class RightechService {
             return messages;
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100");
             log.error("Headers: {}", createHeaders());
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
