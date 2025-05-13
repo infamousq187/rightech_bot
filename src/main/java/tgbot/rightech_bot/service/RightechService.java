@@ -28,7 +28,7 @@ public class RightechService {
 
     public String getProjectObjects() {
         try {
-            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/objects";
+            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/things";
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
@@ -50,7 +50,7 @@ public class RightechService {
 
     public String getLightStatus(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/objects/" + lightId;
+            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/things/" + lightId;
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
@@ -65,7 +65,7 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/objects/" + lightId + "/command";
+            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/things/" + lightId + "/command";
             JSONObject command = new JSONObject();
             command.put("command", "turn_on");
             command.put("brightness", 100);
@@ -82,7 +82,7 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/objects/" + lightId + "/command";
+            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/things/" + lightId + "/command";
             JSONObject command = new JSONObject();
             command.put("command", "turn_off");
 
