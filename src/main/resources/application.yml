@@ -1,0 +1,8 @@
+rightech:
+  api-url: https://rightech.io/api/v1
+  token: ${RIGHTECH_TOKEN:your-token-here}
+  project-id: ${RIGHTECH_PROJECT_ID:your-project-id-here}
+
+logging:
+  level:
+    tgbot.rightech_bot: DEBUG 

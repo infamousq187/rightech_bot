@@ -2,21 +2,27 @@ package tgbot.rightech_bot;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import tgbot.rightech_bot.service.RightechService;
 
 @Getter
 @Setter
+@Component
 public class RightechBot extends TelegramLongPollingBot {
 
-    private String botUsername;
-    private String botToken;
+    private final String botUsername;
+    private final String botToken;
+    private final RightechService rightechService;
+    private static final String LIGHT_ID = "light1"; // ID фонаря в системе Rightech
 
-    public RightechBot(String botUsername, String botToken) {
+    public RightechBot(String botUsername, String botToken, RightechService rightechService) {
         this.botUsername = botUsername;
         this.botToken = botToken;
+        this.rightechService = rightechService;
     }
 
     @Override
@@ -40,19 +46,19 @@ public class RightechBot extends TelegramLongPollingBot {
 
             switch (messageText) {
                 case "/start":
-                    message.setText("Привет! Я бот для управления уличным освещением. Используй команды:\n" +
+                    message.setText("Привет! Я бот для управления уличным освещением через платформу Rightech. Используй команды:\n" +
                             "/status - проверить состояние фонарей\n" +
                             "/turn_on - включить фонарь\n" +
                             "/turn_off - выключить фонарь");
                     break;
                 case "/status":
-                    message.setText("Состояние фонарей: Фонарь №1 включён, Фонарь №2 выключен. (Пока это заглушка)");
+                    message.setText("Состояние фонаря: " + rightechService.getLightStatus(LIGHT_ID));
                     break;
                 case "/turn_on":
-                    message.setText("Фонарь включён! (Пока это заглушка)");
+                    message.setText(rightechService.turnLightOn(LIGHT_ID));
                     break;
                 case "/turn_off":
-                    message.setText("Фонарь выключен! (Пока это заглушка)");
+                    message.setText(rightechService.turnLightOff(LIGHT_ID));
                     break;
                 default:
                     message.setText("Неизвестная команда. Используй /start, чтобы увидеть доступные команды.");
