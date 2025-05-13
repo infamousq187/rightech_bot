@@ -1,5 +1,5 @@
 rightech:
-  api-url: https://dev.rightech.io
+  api-url: https://dev.rightech.io/api
   token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2ODIzOGIwZTIwYjQ2ZGJiNmMxZjZiMmUiLCJzdWIiOiI2ODIzODdjYTIwYjQ2ZGJiNmMxZjZiMjkiLCJncnAiOiI2ODIyZmU5NTIwYjQ2ZGJiNmMxZjZhZjAiLCJvcmciOiI2ODIyZmU5NTIwYjQ2ZGJiNmMxZjZhZjAiLCJsaWMiOiI1ZDNiNWZmMDBhMGE3ZjMwYjY5NWFmZTMiLCJ1c2ciOiJhcGkiLCJmdWxsIjpmYWxzZSwicmlnaHRzIjoxLjUsImlhdCI6MTc0NzE1OTgyMiwiZXhwIjoxNzQ5NjY4NDAwfQ.fKkcL1-BFMQITfCxXnPJjupsLumVjxrkdE-KcU_YaZ0
   project-id: 682304b520b46dbb6c1f6af6
 
