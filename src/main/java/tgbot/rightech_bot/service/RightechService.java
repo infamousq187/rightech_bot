@@ -21,9 +21,8 @@ import java.util.List;
 public class RightechService {
     private final RightechConfig rightechConfig;
     private final RestTemplate restTemplate = new RestTemplate();
-
-    private static final int MAX_MESSAGE_LENGTH = 3000; // Уменьшаем лимит для надежности
-    private static final int MAX_DEVICES_PER_MESSAGE = 5; // Уменьшаем количество устройств в сообщении
+    private static final int MAX_MESSAGE_LENGTH = 1000; // Значительно уменьшаем лимит
+    private static final int MAX_DEVICES_PER_MESSAGE = 3; // Уменьшаем количество устройств в сообщении
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -32,63 +31,65 @@ public class RightechService {
         return headers;
     }
 
+    private String truncateMessage(String message) {
+        if (message.length() > MAX_MESSAGE_LENGTH) {
+            log.warn("Message too long ({} chars), truncating to {}", message.length(), MAX_MESSAGE_LENGTH);
+            return message.substring(0, MAX_MESSAGE_LENGTH - 3) + "...";
+        }
+        return message;
+    }
+
     public List<String> getProjectObjects() {
         try {
-            String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100";
             log.info("Requesting URL: {}", url);
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
+            // Логируем ответ API для отладки
+            log.debug("API Response: {}", response.getBody());
+            
             JSONArray objects = new JSONArray(response.getBody());
             log.info("Received {} objects from API", objects.length());
             
+            if (objects.length() == 0) {
+                return List.of("Устройства не найдены");
+            }
+
             List<String> messages = new ArrayList<>();
-            StringBuilder currentMessage = new StringBuilder("Доступные устройства:\n");
-            int deviceCount = 0;
+            int totalDevices = objects.length();
             int messageCount = 1;
+            int devicesPerMessage = Math.min(MAX_DEVICES_PER_MESSAGE, totalDevices);
             
-            for (int i = 0; i < objects.length(); i++) {
-                JSONObject object = objects.getJSONObject(i);
-                String deviceInfo = String.format("%d. %s (ID: %s)\n", 
-                    i + 1,
-                    object.getString("name"),
-                    object.getString("id"));
-                
-                log.debug("Device info length: {}", deviceInfo.length());
-                
-                // Если добавление нового устройства превысит лимит или достигнем MAX_DEVICES_PER_MESSAGE
-                if (currentMessage.length() + deviceInfo.length() > MAX_MESSAGE_LENGTH || deviceCount >= MAX_DEVICES_PER_MESSAGE) {
-                    String message = currentMessage.toString();
-                    log.info("Adding message {} with length {}", messageCount, message.length());
-                    messages.add(message);
-                    messageCount++;
-                    currentMessage = new StringBuilder(String.format("Доступные устройства (часть %d):\n", messageCount));
-                    deviceCount = 0;
+            for (int i = 0; i < totalDevices; i += devicesPerMessage) {
+                StringBuilder message = new StringBuilder();
+                if (messageCount == 1) {
+                    message.append("Доступные устройства:\n");
+                } else {
+                    message.append(String.format("Доступные устройства (часть %d из %d):\n", 
+                        messageCount, 
+                        (int) Math.ceil((double) totalDevices / devicesPerMessage)));
                 }
                 
-                currentMessage.append(deviceInfo);
-                deviceCount++;
-            }
-            
-            // Добавляем последнее сообщение, если оно не пустое
-            if (currentMessage.length() > 0) {
-                String message = currentMessage.toString();
-                log.info("Adding final message {} with length {}", messageCount, message.length());
-                messages.add(message);
-            }
-            
-            if (messages.isEmpty()) {
-                messages.add("Устройства не найдены");
-            }
-            
-            log.info("Total messages to send: {}", messages.size());
-            for (int i = 0; i < messages.size(); i++) {
-                log.info("Message {} length: {}", i + 1, messages.get(i).length());
+                int endIndex = Math.min(i + devicesPerMessage, totalDevices);
+                for (int j = i; j < endIndex; j++) {
+                    JSONObject object = objects.getJSONObject(j);
+                    String deviceInfo = String.format("%d. %s (ID: %s)\n", 
+                        j + 1,
+                        object.getString("name"),
+                        object.getString("id"));
+                    message.append(deviceInfo);
+                }
+                
+                String finalMessage = truncateMessage(message.toString());
+                log.info("Message {} length: {}", messageCount, finalMessage.length());
+                messages.add(finalMessage);
+                messageCount++;
             }
             
             return messages;
         } catch (Exception e) {
-            log.error("Error getting project objects. URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId(), e);
+            log.error("Error getting project objects. URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100", e);
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
     }
@@ -96,14 +97,16 @@ public class RightechService {
     public String getLightStatus(String lightId) {
         try {
             String url = rightechConfig.getApiUrl() + "/things/" + lightId + "?project=" + rightechConfig.getProjectId();
+            log.debug("Requesting URL: {}", url);
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             
+            log.debug("API Response: {}", response.getBody());
             JSONObject object = new JSONObject(response.getBody());
             return object.getJSONObject("state").getString("power") + " (яркость: " + 
                    object.getJSONObject("state").getInt("brightness") + "%)";
         } catch (Exception e) {
-            log.error("Error getting light status", e);
+            log.error("Error getting light status for device {}: {}", lightId, e.getMessage());
             return "Ошибка получения статуса фонаря";
         }
     }
@@ -111,6 +114,7 @@ public class RightechService {
     public String turnLightOn(String lightId) {
         try {
             String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            log.debug("Requesting URL: {}", url);
             JSONObject command = new JSONObject();
             command.put("command", "turn_on");
             command.put("brightness", 100);
@@ -118,9 +122,10 @@ public class RightechService {
             HttpEntity<String> entity = new HttpEntity<>(command.toString(), createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             
+            log.debug("API Response: {}", response.getBody());
             return "Фонарь успешно включен";
         } catch (Exception e) {
-            log.error("Error turning light on", e);
+            log.error("Error turning light on for device {}: {}", lightId, e.getMessage());
             return "Ошибка включения фонаря";
         }
     }
@@ -128,15 +133,17 @@ public class RightechService {
     public String turnLightOff(String lightId) {
         try {
             String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            log.debug("Requesting URL: {}", url);
             JSONObject command = new JSONObject();
             command.put("command", "turn_off");
 
             HttpEntity<String> entity = new HttpEntity<>(command.toString(), createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             
+            log.debug("API Response: {}", response.getBody());
             return "Фонарь успешно выключен";
         } catch (Exception e) {
-            log.error("Error turning light off", e);
+            log.error("Error turning light off for device {}: {}", lightId, e.getMessage());
             return "Ошибка выключения фонаря";
         }
     }

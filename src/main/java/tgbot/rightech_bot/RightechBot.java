@@ -2,6 +2,7 @@ package tgbot.rightech_bot;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -10,10 +11,13 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import tgbot.rightech_bot.service.RightechService;
 
+@Slf4j
 @Getter
 @Setter
 @Component
 public class RightechBot extends TelegramLongPollingBot {
+
+    private static final int MAX_MESSAGE_LENGTH = 1000; // Максимальная длина сообщения
 
     @Value("${telegram.bot.username}")
     private String botUsername;
@@ -34,6 +38,19 @@ public class RightechBot extends TelegramLongPollingBot {
         return botUsername;
     }
 
+    private void sendMessage(long chatId, String text) throws TelegramApiException {
+        if (text.length() > MAX_MESSAGE_LENGTH) {
+            log.warn("Message too long ({} chars), truncating to {}", text.length(), MAX_MESSAGE_LENGTH);
+            text = text.substring(0, MAX_MESSAGE_LENGTH - 3) + "...";
+        }
+        
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(text);
+        log.debug("Sending message with length: {}", text.length());
+        execute(message);
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
@@ -43,50 +60,32 @@ public class RightechBot extends TelegramLongPollingBot {
             try {
                 switch (messageText) {
                     case "/start":
-                        SendMessage startMessage = new SendMessage();
-                        startMessage.setChatId(String.valueOf(chatId));
-                        startMessage.setText("Привет! Я бот для управления уличным освещением через платформу Rightech. Используй команды:\n" +
+                        sendMessage(chatId, "Привет! Я бот для управления уличным освещением через платформу Rightech. Используй команды:\n" +
                                 "/devices - показать список доступных устройств\n" +
                                 "/status - проверить состояние фонарей\n" +
                                 "/turn_on - включить фонарь\n" +
                                 "/turn_off - выключить фонарь");
-                        execute(startMessage);
                         break;
                     case "/devices":
                         for (String message : rightechService.getProjectObjects()) {
-                            SendMessage deviceMessage = new SendMessage();
-                            deviceMessage.setChatId(String.valueOf(chatId));
-                            deviceMessage.setText(message);
-                            execute(deviceMessage);
+                            sendMessage(chatId, message);
                         }
                         break;
                     case "/status":
-                        SendMessage statusMessage = new SendMessage();
-                        statusMessage.setChatId(String.valueOf(chatId));
-                        statusMessage.setText("Состояние фонаря: " + rightechService.getLightStatus(LIGHT_ID));
-                        execute(statusMessage);
+                        sendMessage(chatId, "Состояние фонаря: " + rightechService.getLightStatus(LIGHT_ID));
                         break;
                     case "/turn_on":
-                        SendMessage turnOnMessage = new SendMessage();
-                        turnOnMessage.setChatId(String.valueOf(chatId));
-                        turnOnMessage.setText(rightechService.turnLightOn(LIGHT_ID));
-                        execute(turnOnMessage);
+                        sendMessage(chatId, rightechService.turnLightOn(LIGHT_ID));
                         break;
                     case "/turn_off":
-                        SendMessage turnOffMessage = new SendMessage();
-                        turnOffMessage.setChatId(String.valueOf(chatId));
-                        turnOffMessage.setText(rightechService.turnLightOff(LIGHT_ID));
-                        execute(turnOffMessage);
+                        sendMessage(chatId, rightechService.turnLightOff(LIGHT_ID));
                         break;
                     default:
-                        SendMessage unknownMessage = new SendMessage();
-                        unknownMessage.setChatId(String.valueOf(chatId));
-                        unknownMessage.setText("Неизвестная команда. Используй /start, чтобы увидеть доступные команды.");
-                        execute(unknownMessage);
+                        sendMessage(chatId, "Неизвестная команда. Используй /start, чтобы увидеть доступные команды.");
                         break;
                 }
             } catch (TelegramApiException e) {
-                e.printStackTrace();
+                log.error("Error sending message", e);
             }
         }
     }
