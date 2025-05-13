@@ -272,11 +272,12 @@ public class RightechService {
                 status.append("📱 Информация об устройстве:\n");
                 status.append(String.format("ID: %s\n", object.optString("id", "неизвестно")));
                 status.append(String.format("Название: %s\n", object.optString("name", "неизвестно")));
-                status.append(String.format("Статус: %s\n", object.optBoolean("online", false) ? "🟢 онлайн" : "🔴 офлайн"));
                 
                 // Информация о состоянии
                 if (object.has("state")) {
                     JSONObject state = object.getJSONObject("state");
+                    status.append(String.format("Статус: %s\n", state.optBoolean("online", false) ? "🟢 онлайн" : "🔴 офлайн"));
+                    
                     if (state.has("payload")) {
                         try {
                             JSONObject payload = new JSONObject(state.getString("payload"));
@@ -290,12 +291,14 @@ public class RightechService {
                             status.append("\n⚠️ Ошибка чтения состояния: ").append(e.getMessage());
                         }
                     }
+                } else {
+                    status.append("Статус: 🔴 офлайн (нет данных о состоянии)\n");
                 }
                 
                 // Информация о последнем обновлении
-                if (object.has("updated_at")) {
-                    String updatedAt = object.getString("updated_at");
-                    status.append(String.format("\n🕒 Последнее обновление: %s", updatedAt));
+                if (object.has("state") && object.getJSONObject("state").has("time")) {
+                    long timestamp = object.getJSONObject("state").getLong("time");
+                    status.append(String.format("\n🕒 Последнее обновление: %s", new java.util.Date(timestamp)));
                 }
                 
                 return status.toString();
