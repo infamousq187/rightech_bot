@@ -190,11 +190,6 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            // Проверяем состояние устройства перед отправкой команды
-            if (!isDeviceOnline(lightId)) {
-                return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
-            }
-
             // Используем эндпоинт команд как в панели Rightech
             String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
             log.info("Making POST request to URL: {}", url);
@@ -222,11 +217,7 @@ public class RightechService {
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка включения фонаря: ";
-                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
-                    errorMessage += "устройство офлайн или недоступно";
-                } else {
-                    errorMessage += errorResponse.optString("message", response.getBody());
-                }
+                errorMessage += errorResponse.optString("message", response.getBody());
                 log.error("Error response from API: {}", response.getBody());
                 return errorMessage;
             }
@@ -240,11 +231,6 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            // Проверяем состояние устройства перед отправкой команды
-            if (!isDeviceOnline(lightId)) {
-                return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
-            }
-
             // Используем эндпоинт команд как в панели Rightech
             String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
             log.info("Making POST request to URL: {}", url);
@@ -271,11 +257,7 @@ public class RightechService {
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка выключения фонаря: ";
-                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
-                    errorMessage += "устройство офлайн или недоступно";
-                } else {
-                    errorMessage += errorResponse.optString("message", response.getBody());
-                }
+                errorMessage += errorResponse.optString("message", response.getBody());
                 log.error("Error response from API: {}", response.getBody());
                 return errorMessage;
             }
@@ -324,14 +306,54 @@ public class RightechService {
                         try {
                             JSONObject payload = new JSONObject(state.getString("payload"));
                             status.append("\n💡 Состояние фонаря:\n");
-                            status.append(String.format("Яркость: %d%%\n", payload.optInt("brightness", 0)));
-                            status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
-                            status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
-                            status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
+                            
+                            // Добавляем все возможные форматы состояния
+                            if (payload.has("power")) {
+                                status.append(String.format("Питание: %s\n", payload.optBoolean("power", false) ? "включено" : "выключено"));
+                            }
+                            if (payload.has("brightness")) {
+                                status.append(String.format("Яркость: %d%%\n", payload.optInt("brightness", 0)));
+                            }
+                            if (payload.has("lux")) {
+                                status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
+                            }
+                            if (payload.has("motion")) {
+                                status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
+                            }
+                            if (payload.has("lamp_life")) {
+                                status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
+                            }
+                            if (payload.has("temperature")) {
+                                status.append(String.format("Температура: %.1f°C\n", payload.optDouble("temperature", 0.0)));
+                            }
+                            if (payload.has("humidity")) {
+                                status.append(String.format("Влажность: %.1f%%\n", payload.optDouble("humidity", 0.0)));
+                            }
+                            if (payload.has("voltage")) {
+                                status.append(String.format("Напряжение: %.1fV\n", payload.optDouble("voltage", 0.0)));
+                            }
+                            if (payload.has("current")) {
+                                status.append(String.format("Ток: %.2fA\n", payload.optDouble("current", 0.0)));
+                            }
+                            if (payload.has("power_consumption")) {
+                                status.append(String.format("Потребление: %.2fW\n", payload.optDouble("power_consumption", 0.0)));
+                            }
                             
                             // Добавляем информацию о MQTT топике
                             if (state.has("topic")) {
                                 status.append(String.format("\n📡 MQTT топик: %s\n", state.getString("topic")));
+                            }
+                            
+                            // Добавляем все остальные поля из payload, которые мы еще не обработали
+                            status.append("\n📊 Дополнительные параметры:\n");
+                            for (String key : payload.keySet()) {
+                                if (!key.equals("power") && !key.equals("brightness") && !key.equals("lux") && 
+                                    !key.equals("motion") && !key.equals("lamp_life") && !key.equals("temperature") && 
+                                    !key.equals("humidity") && !key.equals("voltage") && !key.equals("current") && 
+                                    !key.equals("power_consumption")) {
+                                    Object value = payload.get(key);
+                                    status.append(String.format("%s: %s\n", key, value));
+                                }
                             }
                         } catch (Exception e) {
                             log.warn("Error parsing state payload: {}", e.getMessage());
