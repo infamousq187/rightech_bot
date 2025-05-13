@@ -255,4 +255,57 @@ public class RightechService {
             return "Ошибка выключения фонаря: " + e.getMessage();
         }
     }
+
+    public String getDeviceStatus(String lightId) {
+        try {
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId;
+            log.info("Getting device status. URL: {}", url);
+            
+            HttpEntity<String> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JSONObject object = new JSONObject(response.getBody());
+                StringBuilder status = new StringBuilder();
+                
+                // Основная информация об устройстве
+                status.append("📱 Информация об устройстве:\n");
+                status.append(String.format("ID: %s\n", object.optString("id", "неизвестно")));
+                status.append(String.format("Название: %s\n", object.optString("name", "неизвестно")));
+                status.append(String.format("Статус: %s\n", object.optBoolean("online", false) ? "🟢 онлайн" : "🔴 офлайн"));
+                
+                // Информация о состоянии
+                if (object.has("state")) {
+                    JSONObject state = object.getJSONObject("state");
+                    if (state.has("payload")) {
+                        try {
+                            JSONObject payload = new JSONObject(state.getString("payload"));
+                            status.append("\n💡 Состояние фонаря:\n");
+                            status.append(String.format("Яркость: %d%%\n", payload.optInt("brightness", 0)));
+                            status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
+                            status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
+                            status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
+                        } catch (Exception e) {
+                            log.warn("Error parsing state payload: {}", e.getMessage());
+                            status.append("\n⚠️ Ошибка чтения состояния: ").append(e.getMessage());
+                        }
+                    }
+                }
+                
+                // Информация о последнем обновлении
+                if (object.has("updated_at")) {
+                    String updatedAt = object.getString("updated_at");
+                    status.append(String.format("\n🕒 Последнее обновление: %s", updatedAt));
+                }
+                
+                return status.toString();
+            } else {
+                log.error("Failed to get device status. Response: {}", response.getBody());
+                return "Ошибка получения статуса устройства: " + response.getBody();
+            }
+        } catch (Exception e) {
+            log.error("Error getting device status: {}", e.getMessage());
+            return "Ошибка получения статуса устройства: " + e.getMessage();
+        }
+    }
 } 

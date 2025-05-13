@@ -55,37 +55,28 @@ public class RightechBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
-            long chatId = update.getMessage().getChatId();
+            String chatId = update.getMessage().getChatId().toString();
+            String response;
 
+            switch (messageText) {
+                case "/start" -> response = "Привет! Я бот для управления умным фонарем. Используйте следующие команды:\n" +
+                        "/status - показать текущее состояние фонаря\n" +
+                        "/turn_on - включить фонарь\n" +
+                        "/turn_off - выключить фонарь";
+                case "/turn_on" -> response = rightechService.turnLightOn(LIGHT_ID);
+                case "/turn_off" -> response = rightechService.turnLightOff(LIGHT_ID);
+                case "/status" -> response = rightechService.getDeviceStatus(LIGHT_ID);
+                default -> response = "Неизвестная команда. Используйте /start для просмотра списка команд.";
+            }
+
+            SendMessage message = new SendMessage();
+            message.setChatId(chatId);
+            message.setText(response);
+            log.debug("Sending message with length: {}", response.length());
             try {
-                switch (messageText) {
-                    case "/start":
-                        sendMessage(chatId, "Привет! Я бот для управления уличным освещением через платформу Rightech. Используй команды:\n" +
-                                "/devices - показать список доступных устройств\n" +
-                                "/status - проверить состояние фонарей\n" +
-                                "/turn_on - включить фонарь\n" +
-                                "/turn_off - выключить фонарь");
-                        break;
-                    case "/devices":
-                        for (String message : rightechService.getProjectObjects()) {
-                            sendMessage(chatId, message);
-                        }
-                        break;
-                    case "/status":
-                        sendMessage(chatId, "Состояние фонаря: " + rightechService.getLightStatus(LIGHT_ID));
-                        break;
-                    case "/turn_on":
-                        sendMessage(chatId, rightechService.turnLightOn(LIGHT_ID));
-                        break;
-                    case "/turn_off":
-                        sendMessage(chatId, rightechService.turnLightOff(LIGHT_ID));
-                        break;
-                    default:
-                        sendMessage(chatId, "Неизвестная команда. Используй /start, чтобы увидеть доступные команды.");
-                        break;
-                }
+                execute(message);
             } catch (TelegramApiException e) {
-                log.error("Error sending message", e);
+                log.error("Error sending message: {}", e.getMessage());
             }
         }
     }
