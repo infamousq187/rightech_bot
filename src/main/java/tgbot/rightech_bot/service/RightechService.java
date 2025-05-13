@@ -137,8 +137,9 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
-            log.debug("Making POST request to URL: {}", url);
+            // Используем тот же ID проекта, что и для получения состояния
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/command";
+            log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
             log.debug("Method: POST");
@@ -156,19 +157,25 @@ public class RightechService {
             log.debug("Response headers: {}", response.getHeaders());
             log.debug("Response body: {}", response.getBody());
             
-            return "Фонарь успешно включен";
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return "Фонарь успешно включен на 100% яркости";
+            } else {
+                log.error("Error response from API: {}", response.getBody());
+                return "Ошибка включения фонаря: " + response.getBody();
+            }
         } catch (Exception e) {
-            log.error("Error turning light on for device {}. Full request details:", lightId, e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
+            log.error("Error turning light on. Full request details:", e);
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/command");
             log.error("Headers: {}", createHeaders());
-            return "Ошибка включения фонаря";
+            return "Ошибка включения фонаря: " + e.getMessage();
         }
     }
 
     public String turnLightOff(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
-            log.debug("Making POST request to URL: {}", url);
+            // Используем тот же ID проекта, что и для получения состояния
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/command";
+            log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
             log.debug("Method: POST");
@@ -185,12 +192,17 @@ public class RightechService {
             log.debug("Response headers: {}", response.getHeaders());
             log.debug("Response body: {}", response.getBody());
             
-            return "Фонарь успешно выключен";
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return "Фонарь успешно выключен";
+            } else {
+                log.error("Error response from API: {}", response.getBody());
+                return "Ошибка выключения фонаря: " + response.getBody();
+            }
         } catch (Exception e) {
-            log.error("Error turning light off for device {}. Full request details:", lightId, e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
+            log.error("Error turning light off. Full request details:", e);
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/command");
             log.error("Headers: {}", createHeaders());
-            return "Ошибка выключения фонаря";
+            return "Ошибка выключения фонаря: " + e.getMessage();
         }
     }
 } 
