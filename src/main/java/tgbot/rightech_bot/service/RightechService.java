@@ -162,6 +162,32 @@ public class RightechService {
         }
     }
 
+    private void sendMqttCommand(String lightId, String command, int brightness) {
+        try {
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/mqtt";
+            log.info("Sending MQTT command. URL: {}", url);
+            
+            JSONObject mqttMessage = new JSONObject();
+            mqttMessage.put("command", command);
+            if (brightness > 0) {
+                mqttMessage.put("brightness", brightness);
+            }
+            
+            HttpEntity<String> entity = new HttpEntity<>(mqttMessage.toString(), createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+            
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.error("Failed to send MQTT command. Response: {}", response.getBody());
+                throw new RuntimeException("Failed to send MQTT command: " + response.getBody());
+            }
+            
+            log.info("MQTT command sent successfully");
+        } catch (Exception e) {
+            log.error("Error sending MQTT command: {}", e.getMessage());
+            throw new RuntimeException("Error sending MQTT command: " + e.getMessage());
+        }
+    }
+
     public String turnLightOn(String lightId) {
         try {
             // Проверяем состояние устройства перед отправкой команды
@@ -169,45 +195,15 @@ public class RightechService {
                 return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
             }
 
-            // Используем правильный эндпоинт для отправки команд с именем команды ON
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
-            log.info("Making POST request to URL: {}", url);
-            log.debug("Full request details:");
-            log.debug("URL: {}", url);
-            log.debug("Method: POST");
-            log.debug("Headers: {}", createHeaders());
+            // Отправляем команду через MQTT
+            sendMqttCommand(lightId, "ON", 100);
             
-            JSONObject command = new JSONObject();
-            command.put("brightness", 100);
-            log.debug("Request body: {}", command.toString());
-
-            HttpEntity<String> entity = new HttpEntity<>(command.toString(), createHeaders());
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            
-            log.debug("Response status: {}", response.getStatusCode());
-            log.debug("Response headers: {}", response.getHeaders());
-            log.debug("Response body: {}", response.getBody());
-            
-            if (response.getStatusCode().is2xxSuccessful()) {
-                // После успешной команды ждем немного и проверяем состояние
-                Thread.sleep(1000);
-                List<String> status = getProjectObjects();
-                return "Фонарь успешно включен на 100% яркости\n\n" + status.get(0);
-            } else {
-                JSONObject errorResponse = new JSONObject(response.getBody());
-                String errorMessage = "Ошибка включения фонаря: ";
-                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
-                    errorMessage += "устройство офлайн или недоступно";
-                } else {
-                    errorMessage += errorResponse.optString("message", response.getBody());
-                }
-                log.error("Error response from API: {}", response.getBody());
-                return errorMessage;
-            }
+            // После успешной команды ждем немного и проверяем состояние
+            Thread.sleep(1000);
+            List<String> status = getProjectObjects();
+            return "Фонарь успешно включен на 100% яркости\n\n" + status.get(0);
         } catch (Exception e) {
-            log.error("Error turning light on. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON");
-            log.error("Headers: {}", createHeaders());
+            log.error("Error turning light on: {}", e.getMessage());
             return "Ошибка включения фонаря: " + e.getMessage();
         }
     }
@@ -219,44 +215,15 @@ public class RightechService {
                 return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
             }
 
-            // Используем правильный эндпоинт для отправки команд с именем команды OFF
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
-            log.info("Making POST request to URL: {}", url);
-            log.debug("Full request details:");
-            log.debug("URL: {}", url);
-            log.debug("Method: POST");
-            log.debug("Headers: {}", createHeaders());
+            // Отправляем команду через MQTT
+            sendMqttCommand(lightId, "OFF", 0);
             
-            JSONObject command = new JSONObject();
-            log.debug("Request body: {}", command.toString());
-
-            HttpEntity<String> entity = new HttpEntity<>(command.toString(), createHeaders());
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            
-            log.debug("Response status: {}", response.getStatusCode());
-            log.debug("Response headers: {}", response.getHeaders());
-            log.debug("Response body: {}", response.getBody());
-            
-            if (response.getStatusCode().is2xxSuccessful()) {
-                // После успешной команды ждем немного и проверяем состояние
-                Thread.sleep(1000);
-                List<String> status = getProjectObjects();
-                return "Фонарь успешно выключен\n\n" + status.get(0);
-            } else {
-                JSONObject errorResponse = new JSONObject(response.getBody());
-                String errorMessage = "Ошибка выключения фонаря: ";
-                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
-                    errorMessage += "устройство офлайн или недоступно";
-                } else {
-                    errorMessage += errorResponse.optString("message", response.getBody());
-                }
-                log.error("Error response from API: {}", response.getBody());
-                return errorMessage;
-            }
+            // После успешной команды ждем немного и проверяем состояние
+            Thread.sleep(1000);
+            List<String> status = getProjectObjects();
+            return "Фонарь успешно выключен\n\n" + status.get(0);
         } catch (Exception e) {
-            log.error("Error turning light off. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF");
-            log.error("Headers: {}", createHeaders());
+            log.error("Error turning light off: {}", e.getMessage());
             return "Ошибка выключения фонаря: " + e.getMessage();
         }
     }
