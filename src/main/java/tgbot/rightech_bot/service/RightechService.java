@@ -42,7 +42,7 @@ public class RightechService {
 
     public List<String> getProjectObjects() {
         try {
-            String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100";
+            String url = rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -97,7 +97,7 @@ public class RightechService {
             return messages;
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100");
             log.error("Headers: {}", createHeaders());
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
@@ -105,7 +105,7 @@ public class RightechService {
 
     public String getLightStatus(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "?project=" + rightechConfig.getProjectId();
             log.debug("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -124,7 +124,7 @@ public class RightechService {
                    object.getJSONObject("state").getInt("brightness") + "%)";
         } catch (Exception e) {
             log.error("Error getting light status for device {}. Full request details:", lightId, e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things/" + lightId + "?project=" + rightechConfig.getProjectId());
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things/" + lightId + "?project=" + rightechConfig.getProjectId());
             log.error("Headers: {}", createHeaders());
             return "Ошибка получения статуса фонаря";
         }
@@ -132,7 +132,7 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
             log.debug("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -154,7 +154,7 @@ public class RightechService {
             return "Фонарь успешно включен";
         } catch (Exception e) {
             log.error("Error turning light on for device {}. Full request details:", lightId, e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
             log.error("Headers: {}", createHeaders());
             return "Ошибка включения фонаря";
         }
@@ -162,7 +162,7 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
             log.debug("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -183,7 +183,7 @@ public class RightechService {
             return "Фонарь успешно выключен";
         } catch (Exception e) {
             log.error("Error turning light off for device {}. Full request details:", lightId, e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId());
             log.error("Headers: {}", createHeaders());
             return "Ошибка выключения фонаря";
         }
