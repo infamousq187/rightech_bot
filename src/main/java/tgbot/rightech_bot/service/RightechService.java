@@ -272,11 +272,22 @@ public class RightechService {
                 status.append("📱 Информация об устройстве:\n");
                 status.append(String.format("ID: %s\n", object.optString("id", "неизвестно")));
                 status.append(String.format("Название: %s\n", object.optString("name", "неизвестно")));
+                status.append(String.format("Активно: %s\n", object.optBoolean("active", false) ? "✅" : "❌"));
                 
                 // Информация о состоянии
                 if (object.has("state")) {
                     JSONObject state = object.getJSONObject("state");
-                    status.append(String.format("Статус: %s\n", state.optBoolean("online", false) ? "🟢 онлайн" : "🔴 офлайн"));
+                    boolean isOnline = state.optBoolean("online", false);
+                    long lastUpdateTime = state.optLong("time", 0);
+                    long currentTime = System.currentTimeMillis();
+                    long timeDiff = currentTime - lastUpdateTime;
+                    
+                    log.info("Device state: online={}, lastUpdate={}, timeDiff={}ms", 
+                            isOnline, new java.util.Date(lastUpdateTime), timeDiff);
+                    
+                    status.append(String.format("Статус: %s\n", isOnline ? "🟢 онлайн" : "🔴 офлайн"));
+                    status.append(String.format("Последнее обновление: %s (%d сек. назад)\n", 
+                            new java.util.Date(lastUpdateTime), timeDiff / 1000));
                     
                     if (state.has("payload")) {
                         try {
@@ -286,6 +297,11 @@ public class RightechService {
                             status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
                             status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
                             status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
+                            
+                            // Добавляем информацию о MQTT топике
+                            if (state.has("topic")) {
+                                status.append(String.format("\n📡 MQTT топик: %s\n", state.getString("topic")));
+                            }
                         } catch (Exception e) {
                             log.warn("Error parsing state payload: {}", e.getMessage());
                             status.append("\n⚠️ Ошибка чтения состояния: ").append(e.getMessage());
@@ -295,10 +311,19 @@ public class RightechService {
                     status.append("Статус: 🔴 офлайн (нет данных о состоянии)\n");
                 }
                 
-                // Информация о последнем обновлении
-                if (object.has("state") && object.getJSONObject("state").has("time")) {
-                    long timestamp = object.getJSONObject("state").getLong("time");
-                    status.append(String.format("\n🕒 Последнее обновление: %s", new java.util.Date(timestamp)));
+                // Информация о боте
+                if (object.has("bot")) {
+                    JSONObject bot = object.getJSONObject("bot");
+                    status.append("\n🤖 Состояние бота:\n");
+                    status.append(String.format("Статус: %s\n", bot.optString("state", "неизвестно")));
+                    if (bot.has("startedAt")) {
+                        status.append(String.format("Запущен: %s\n", 
+                                new java.util.Date(bot.getLong("startedAt"))));
+                    }
+                    if (bot.has("stoppedAt")) {
+                        status.append(String.format("Остановлен: %s\n", 
+                                new java.util.Date(bot.getLong("stoppedAt"))));
+                    }
                 }
                 
                 return status.toString();
