@@ -135,8 +135,35 @@ public class RightechService {
         }
     }
 
+    private boolean isDeviceOnline(String lightId) {
+        try {
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId;
+            log.info("Checking device status. URL: {}", url);
+            
+            HttpEntity<String> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JSONObject object = new JSONObject(response.getBody());
+                boolean online = object.optBoolean("online", false);
+                log.info("Device {} is {}", lightId, online ? "online" : "offline");
+                return online;
+            }
+            log.error("Failed to get device status. Response: {}", response.getBody());
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking device status: {}", e.getMessage());
+            return false;
+        }
+    }
+
     public String turnLightOn(String lightId) {
         try {
+            // Проверяем состояние устройства перед отправкой команды
+            if (!isDeviceOnline(lightId)) {
+                return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
+            }
+
             // Используем правильный эндпоинт для отправки команд с именем команды ON
             String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
             log.info("Making POST request to URL: {}", url);
@@ -162,8 +189,15 @@ public class RightechService {
                 List<String> status = getProjectObjects();
                 return "Фонарь успешно включен на 100% яркости\n\n" + status.get(0);
             } else {
+                JSONObject errorResponse = new JSONObject(response.getBody());
+                String errorMessage = "Ошибка включения фонаря: ";
+                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
+                    errorMessage += "устройство офлайн или недоступно";
+                } else {
+                    errorMessage += errorResponse.optString("message", response.getBody());
+                }
                 log.error("Error response from API: {}", response.getBody());
-                return "Ошибка включения фонаря: " + response.getBody();
+                return errorMessage;
             }
         } catch (Exception e) {
             log.error("Error turning light on. Full request details:", e);
@@ -175,6 +209,11 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
+            // Проверяем состояние устройства перед отправкой команды
+            if (!isDeviceOnline(lightId)) {
+                return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
+            }
+
             // Используем правильный эндпоинт для отправки команд с именем команды OFF
             String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
             log.info("Making POST request to URL: {}", url);
@@ -199,8 +238,15 @@ public class RightechService {
                 List<String> status = getProjectObjects();
                 return "Фонарь успешно выключен\n\n" + status.get(0);
             } else {
+                JSONObject errorResponse = new JSONObject(response.getBody());
+                String errorMessage = "Ошибка выключения фонаря: ";
+                if (errorResponse.has("tags") && errorResponse.getJSONArray("tags").toList().contains("error_offline")) {
+                    errorMessage += "устройство офлайн или недоступно";
+                } else {
+                    errorMessage += errorResponse.optString("message", response.getBody());
+                }
                 log.error("Error response from API: {}", response.getBody());
-                return "Ошибка выключения фонаря: " + response.getBody();
+                return errorMessage;
             }
         } catch (Exception e) {
             log.error("Error turning light off. Full request details:", e);
