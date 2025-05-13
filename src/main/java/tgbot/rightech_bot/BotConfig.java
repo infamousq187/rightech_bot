@@ -11,14 +11,7 @@ import tgbot.rightech_bot.service.RightechService;
 public class BotConfig {
 
     @Bean
-    public RightechBot rightechBot(RightechService rightechService) {
-        RightechBot bot = new RightechBot(rightechService);
-        try {
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(bot);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-        return bot;
+    public TelegramBotsApi telegramBotsApi() throws TelegramApiException {
+        return new TelegramBotsApi(DefaultBotSession.class);
     }
 }
