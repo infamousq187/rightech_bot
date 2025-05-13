@@ -145,9 +145,14 @@ public class RightechService {
             
             if (response.getStatusCode().is2xxSuccessful()) {
                 JSONObject object = new JSONObject(response.getBody());
-                boolean online = object.optBoolean("online", false);
-                log.info("Device {} is {}", lightId, online ? "online" : "offline");
-                return online;
+                if (object.has("state")) {
+                    JSONObject state = object.getJSONObject("state");
+                    boolean online = state.optBoolean("online", false);
+                    log.info("Device {} is {} (from state object)", lightId, online ? "online" : "offline");
+                    return online;
+                }
+                log.warn("Device {} has no state object", lightId);
+                return false;
             }
             log.error("Failed to get device status. Response: {}", response.getBody());
             return false;
