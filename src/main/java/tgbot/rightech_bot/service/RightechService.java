@@ -65,8 +65,8 @@ public class RightechService {
                 return List.of("Ошибка доступа к проекту. Проверьте project ID и права доступа токена.");
             }
 
-            // Получаем состояние объекта через /objects/{projectId}/store
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/store";
+            // Получаем информацию о проекте, которая уже содержит состояние фонаря
+            String url = rightechConfig.getApiUrl() + "/v1/objects?project=" + rightechConfig.getProjectId() + "&limit=1";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -80,10 +80,12 @@ public class RightechService {
             log.debug("Response headers: {}", response.getHeaders());
             log.debug("Response body: {}", response.getBody());
             
-            JSONObject object = new JSONObject(response.getBody());
-            log.info("Received object state from API");
-            
-            // Формируем сообщение о состоянии фонаря
+            JSONArray objects = new JSONArray(response.getBody());
+            if (objects.length() == 0) {
+                return List.of("Проект не содержит объектов");
+            }
+
+            JSONObject object = objects.getJSONObject(0);
             JSONObject state = object.getJSONObject("state");
             JSONObject payload = new JSONObject(state.getString("payload"));
             
@@ -100,7 +102,7 @@ public class RightechService {
             
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/store");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects?project=" + rightechConfig.getProjectId() + "&limit=1");
             log.error("Headers: {}", createHeaders());
             return List.of("Ошибка получения состояния фонаря: " + e.getMessage());
         }
