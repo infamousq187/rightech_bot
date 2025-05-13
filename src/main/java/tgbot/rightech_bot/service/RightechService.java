@@ -195,8 +195,8 @@ public class RightechService {
                 return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
             }
 
-            // Используем правильный эндпоинт для отправки команд
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/command";
+            // Используем эндпоинт команд как в панели Rightech
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -204,7 +204,6 @@ public class RightechService {
             log.debug("Headers: {}", createHeaders());
             
             JSONObject command = new JSONObject();
-            command.put("command", "ON");
             command.put("brightness", 100);
             log.debug("Request body: {}", command.toString());
 
@@ -233,7 +232,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light on. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/command");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON");
             log.error("Headers: {}", createHeaders());
             return "Ошибка включения фонаря: " + e.getMessage();
         }
@@ -246,8 +245,8 @@ public class RightechService {
                 return "Ошибка: устройство офлайн или недоступно. Пожалуйста, проверьте подключение устройства и попробуйте снова.";
             }
 
-            // Используем правильный эндпоинт для отправки команд
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/command";
+            // Используем эндпоинт команд как в панели Rightech
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -255,7 +254,6 @@ public class RightechService {
             log.debug("Headers: {}", createHeaders());
             
             JSONObject command = new JSONObject();
-            command.put("command", "OFF");
             log.debug("Request body: {}", command.toString());
 
             HttpEntity<String> entity = new HttpEntity<>(command.toString(), createHeaders());
@@ -283,7 +281,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light off. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/command");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF");
             log.error("Headers: {}", createHeaders());
             return "Ошибка выключения фонаря: " + e.getMessage();
         }
