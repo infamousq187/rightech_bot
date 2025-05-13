@@ -41,7 +41,7 @@ public class RightechService {
 
     public List<String> getProjectObjects() {
         try {
-            String url = rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100";
+            String url = rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100";
             log.info("Requesting URL: {}", url);
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
@@ -89,14 +89,14 @@ public class RightechService {
             
             return messages;
         } catch (Exception e) {
-            log.error("Error getting project objects. URL: {}", rightechConfig.getApiUrl() + "/things?project=" + rightechConfig.getProjectId() + "&limit=100", e);
+            log.error("Error getting project objects. URL: {}", rightechConfig.getApiUrl() + "/v1/things?project=" + rightechConfig.getProjectId() + "&limit=100", e);
             return List.of("Ошибка получения списка устройств: " + e.getMessage());
         }
     }
 
     public String getLightStatus(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "?project=" + rightechConfig.getProjectId();
             log.debug("Requesting URL: {}", url);
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
@@ -113,7 +113,7 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
             log.debug("Requesting URL: {}", url);
             JSONObject command = new JSONObject();
             command.put("command", "turn_on");
@@ -132,7 +132,7 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            String url = rightechConfig.getApiUrl() + "/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
+            String url = rightechConfig.getApiUrl() + "/v1/things/" + lightId + "/command?project=" + rightechConfig.getProjectId();
             log.debug("Requesting URL: {}", url);
             JSONObject command = new JSONObject();
             command.put("command", "turn_off");
