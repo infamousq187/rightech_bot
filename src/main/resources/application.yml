@@ -1,7 +1,7 @@
 rightech:
-  api-url: https://rightech.io/api/v1
-  token: ${RIGHTECH_TOKEN:your-token-here}
-  project-id: ${RIGHTECH_PROJECT_ID:your-project-id-here}
+  api-url: https://dev.rightech.io/api/v1
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2ODIzOGIwZTIwYjQ2ZGJiNmMxZjZiMmUiLCJzdWIiOiI2ODIzODdjYTIwYjQ2ZGJiNmMxZjZiMjkiLCJncnAiOiI2ODIyZmU5NTIwYjQ2ZGJiNmMxZjZhZjAiLCJvcmciOiI2ODIyZmU5NTIwYjQ2ZGJiNmMxZjZhZjAiLCJsaWMiOiI1ZDNiNWZmMDBhMGE3ZjMwYjY5NWFmZTMiLCJ1c2ciOiJhcGkiLCJmdWxsIjpmYWxzZSwicmlnaHRzIjoxLjUsImlhdCI6MTc0NzE1OTgyMiwiZXhwIjoxNzQ5NjY4NDAwfQ.fKkcL1-BFMQITfCxXnPJjupsLumVjxrkdE-KcU_YaZ0
+  project-id: 682304b520b46dbb6c1f6af6
 
 telegram:
   bot:
