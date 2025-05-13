@@ -65,8 +65,8 @@ public class RightechService {
                 return List.of("Ошибка доступа к проекту. Проверьте project ID и права доступа токена.");
             }
 
-            // Получаем список устройств через /objects/{projectId}/things
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/things?limit=100";
+            // Получаем состояние объекта через /objects/{projectId}/store
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/store";
             log.info("Making GET request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -80,50 +80,29 @@ public class RightechService {
             log.debug("Response headers: {}", response.getHeaders());
             log.debug("Response body: {}", response.getBody());
             
-            JSONArray objects = new JSONArray(response.getBody());
-            log.info("Received {} objects from API", objects.length());
+            JSONObject object = new JSONObject(response.getBody());
+            log.info("Received object state from API");
             
-            if (objects.length() == 0) {
-                return List.of("Устройства не найдены");
-            }
-
-            List<String> messages = new ArrayList<>();
-            int totalDevices = objects.length();
-            int messageCount = 1;
-            int devicesPerMessage = Math.min(MAX_DEVICES_PER_MESSAGE, totalDevices);
+            // Формируем сообщение о состоянии фонаря
+            JSONObject state = object.getJSONObject("state");
+            JSONObject payload = new JSONObject(state.getString("payload"));
             
-            for (int i = 0; i < totalDevices; i += devicesPerMessage) {
-                StringBuilder message = new StringBuilder();
-                if (messageCount == 1) {
-                    message.append("Доступные устройства:\n");
-                } else {
-                    message.append(String.format("Доступные устройства (часть %d из %d):\n", 
-                        messageCount, 
-                        (int) Math.ceil((double) totalDevices / devicesPerMessage)));
-                }
-                
-                int endIndex = Math.min(i + devicesPerMessage, totalDevices);
-                for (int j = i; j < endIndex; j++) {
-                    JSONObject object = objects.getJSONObject(j);
-                    String deviceInfo = String.format("%d. %s (ID: %s)\n", 
-                        j + 1,
-                        object.getString("name"),
-                        object.getString("id"));
-                    message.append(deviceInfo);
-                }
-                
-                String finalMessage = truncateMessage(message.toString());
-                log.info("Message {} length: {}", messageCount, finalMessage.length());
-                messages.add(finalMessage);
-                messageCount++;
-            }
+            StringBuilder message = new StringBuilder();
+            message.append("Состояние фонаря:\n");
+            message.append(String.format("Яркость: %d%%\n", payload.getInt("brightness")));
+            message.append(String.format("Освещенность: %d lux\n", payload.getInt("lux")));
+            message.append(String.format("Движение: %s\n", payload.getBoolean("motion") ? "есть" : "нет"));
+            message.append(String.format("Ресурс лампы: %.2f часов\n", payload.getDouble("lamp_life")));
             
-            return messages;
+            String finalMessage = truncateMessage(message.toString());
+            log.info("Message length: {}", finalMessage.length());
+            return List.of(finalMessage);
+            
         } catch (Exception e) {
             log.error("Error getting project objects. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/things?limit=100");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + rightechConfig.getProjectId() + "/store");
             log.error("Headers: {}", createHeaders());
-            return List.of("Ошибка получения списка устройств: " + e.getMessage());
+            return List.of("Ошибка получения состояния фонаря: " + e.getMessage());
         }
     }
 
