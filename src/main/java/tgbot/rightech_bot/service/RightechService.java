@@ -2,6 +2,7 @@ package tgbot.rightech_bot.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +24,28 @@ public class RightechService {
         headers.set("Authorization", "Bearer " + rightechConfig.getToken());
         headers.set("Content-Type", "application/json");
         return headers;
+    }
+
+    public String getProjectObjects() {
+        try {
+            String url = rightechConfig.getApiUrl() + "/projects/" + rightechConfig.getProjectId() + "/objects";
+            HttpEntity<String> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            
+            JSONArray objects = new JSONArray(response.getBody());
+            StringBuilder result = new StringBuilder("Доступные устройства:\n");
+            
+            for (int i = 0; i < objects.length(); i++) {
+                JSONObject object = objects.getJSONObject(i);
+                result.append("- ").append(object.getString("name"))
+                      .append(" (ID: ").append(object.getString("id")).append(")\n");
+            }
+            
+            return result.toString();
+        } catch (Exception e) {
+            log.error("Error getting project objects", e);
+            return "Ошибка получения списка устройств: " + e.getMessage();
+        }
     }
 
     public String getLightStatus(String lightId) {

@@ -50,9 +50,13 @@ public class RightechBot extends TelegramLongPollingBot {
             switch (messageText) {
                 case "/start":
                     message.setText("Привет! Я бот для управления уличным освещением через платформу Rightech. Используй команды:\n" +
+                            "/devices - показать список доступных устройств\n" +
                             "/status - проверить состояние фонарей\n" +
                             "/turn_on - включить фонарь\n" +
                             "/turn_off - выключить фонарь");
+                    break;
+                case "/devices":
+                    message.setText(rightechService.getProjectObjects());
                     break;
                 case "/status":
                     message.setText("Состояние фонаря: " + rightechService.getLightStatus(LIGHT_ID));
