@@ -304,39 +304,61 @@ public class RightechService {
                     
                     if (state.has("payload")) {
                         try {
-                            JSONObject payload = new JSONObject(state.getString("payload"));
+                            String payloadStr = state.getString("payload");
+                            log.debug("Raw payload: {}", payloadStr);
+                            
+                            // Пробуем разные форматы payload
+                            JSONObject payload;
+                            try {
+                                // Сначала пробуем как JSON строку
+                                payload = new JSONObject(payloadStr);
+                            } catch (Exception e) {
+                                try {
+                                    // Если не получилось, пробуем как обычную строку
+                                    payload = new JSONObject();
+                                    // Разбиваем строку на пары ключ-значение
+                                    String[] pairs = payloadStr.replace("{", "").replace("}", "").split(",");
+                                    for (String pair : pairs) {
+                                        String[] keyValue = pair.split(":");
+                                        if (keyValue.length == 2) {
+                                            String key = keyValue[0].trim();
+                                            String value = keyValue[1].trim();
+                                            // Пробуем преобразовать значение в число
+                                            try {
+                                                if (value.contains(".")) {
+                                                    payload.put(key, Double.parseDouble(value));
+                                                } else {
+                                                    payload.put(key, Integer.parseInt(value));
+                                                }
+                                            } catch (NumberFormatException nfe) {
+                                                // Если не число, оставляем как строку
+                                                payload.put(key, value);
+                                            }
+                                        }
+                                    }
+                                } catch (Exception e2) {
+                                    log.error("Failed to parse payload in both formats: {}", e2.getMessage());
+                                    throw e2;
+                                }
+                            }
+                            
                             status.append("\n💡 Состояние фонаря:\n");
                             
-                            // Добавляем все возможные форматы состояния
-                            if (payload.has("power")) {
-                                status.append(String.format("Питание: %s\n", payload.optBoolean("power", false) ? "включено" : "выключено"));
-                            }
+                            // Основные параметры лампы
                             if (payload.has("brightness")) {
                                 status.append(String.format("Яркость: %d%%\n", payload.optInt("brightness", 0)));
                             }
                             if (payload.has("lux")) {
                                 status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
                             }
-                            if (payload.has("motion")) {
-                                status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
-                            }
                             if (payload.has("lamp_life")) {
                                 status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
                             }
-                            if (payload.has("temperature")) {
-                                status.append(String.format("Температура: %.1f°C\n", payload.optDouble("temperature", 0.0)));
+                            if (payload.has("power")) {
+                                status.append(String.format("Питание: %s\n", payload.optBoolean("power", false) ? "включено" : "выключено"));
                             }
-                            if (payload.has("humidity")) {
-                                status.append(String.format("Влажность: %.1f%%\n", payload.optDouble("humidity", 0.0)));
-                            }
-                            if (payload.has("voltage")) {
-                                status.append(String.format("Напряжение: %.1fV\n", payload.optDouble("voltage", 0.0)));
-                            }
-                            if (payload.has("current")) {
-                                status.append(String.format("Ток: %.2fA\n", payload.optDouble("current", 0.0)));
-                            }
-                            if (payload.has("power_consumption")) {
-                                status.append(String.format("Потребление: %.2fW\n", payload.optDouble("power_consumption", 0.0)));
+                            if (payload.has("motion")) {
+                                status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
                             }
                             
                             // Добавляем информацию о MQTT топике
@@ -344,39 +366,13 @@ public class RightechService {
                                 status.append(String.format("\n📡 MQTT топик: %s\n", state.getString("topic")));
                             }
                             
-                            // Добавляем все остальные поля из payload, которые мы еще не обработали
-                            status.append("\n📊 Дополнительные параметры:\n");
-                            for (String key : payload.keySet()) {
-                                if (!key.equals("power") && !key.equals("brightness") && !key.equals("lux") && 
-                                    !key.equals("motion") && !key.equals("lamp_life") && !key.equals("temperature") && 
-                                    !key.equals("humidity") && !key.equals("voltage") && !key.equals("current") && 
-                                    !key.equals("power_consumption")) {
-                                    Object value = payload.get(key);
-                                    status.append(String.format("%s: %s\n", key, value));
-                                }
-                            }
                         } catch (Exception e) {
-                            log.warn("Error parsing state payload: {}", e.getMessage());
+                            log.error("Error parsing state payload: {} for payload: {}", e.getMessage(), state.optString("payload"));
                             status.append("\n⚠️ Ошибка чтения состояния: ").append(e.getMessage());
                         }
                     }
                 } else {
                     status.append("Статус: 🔴 офлайн (нет данных о состоянии)\n");
-                }
-                
-                // Информация о боте
-                if (object.has("bot")) {
-                    JSONObject bot = object.getJSONObject("bot");
-                    status.append("\n🤖 Состояние бота:\n");
-                    status.append(String.format("Статус: %s\n", bot.optString("state", "неизвестно")));
-                    if (bot.has("startedAt")) {
-                        status.append(String.format("Запущен: %s\n", 
-                                new java.util.Date(bot.getLong("startedAt"))));
-                    }
-                    if (bot.has("stoppedAt")) {
-                        status.append(String.format("Остановлен: %s\n", 
-                                new java.util.Date(bot.getLong("stoppedAt"))));
-                    }
                 }
                 
                 return status.toString();
