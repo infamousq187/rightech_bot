@@ -23,6 +23,7 @@ public class RightechService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final int MAX_MESSAGE_LENGTH = 1000; // Значительно уменьшаем лимит
     private static final int MAX_DEVICES_PER_MESSAGE = 3; // Уменьшаем количество устройств в сообщении
+    private static final String MODEL_ID = "682304b420b46dbb6c1f6af5"; // ID модели устройства
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -188,10 +189,36 @@ public class RightechService {
         }
     }
 
+    private String getDeviceModelInfo(String lightId) {
+        try {
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId;
+            log.info("Getting device model info. URL: {}", url);
+            
+            HttpEntity<String> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JSONObject object = new JSONObject(response.getBody());
+                if (object.has("model")) {
+                    JSONObject model = object.getJSONObject("model");
+                    log.info("Device model info: {}", model.toString());
+                    return model.optString("id", null);
+                }
+                log.warn("Device {} has no model information", lightId);
+                return null;
+            }
+            log.error("Failed to get device model info. Response: {}", response.getBody());
+            return null;
+        } catch (Exception e) {
+            log.error("Error getting device model info: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public String turnLightOn(String lightId) {
         try {
-            // Используем эндпоинт команд как в панели Rightech
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
+            // Используем эндпоинт команд с идентификатором модели
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/on";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -212,8 +239,7 @@ public class RightechService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 // После успешной команды ждем немного и проверяем состояние
                 Thread.sleep(1000);
-                List<String> status = getProjectObjects();
-                return "Фонарь успешно включен на 100% яркости\n\n" + status.get(0);
+                return "Фонарь успешно включен на 100% яркости\n\n" + getDeviceStatus(lightId);
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка включения фонаря: ";
@@ -223,7 +249,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light on. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/on");
             log.error("Headers: {}", createHeaders());
             return "Ошибка включения фонаря: " + e.getMessage();
         }
@@ -231,8 +257,8 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            // Используем эндпоинт команд как в панели Rightech
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
+            // Используем эндпоинт команд с идентификатором модели
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/off";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -252,8 +278,7 @@ public class RightechService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 // После успешной команды ждем немного и проверяем состояние
                 Thread.sleep(1000);
-                List<String> status = getProjectObjects();
-                return "Фонарь успешно выключен\n\n" + status.get(0);
+                return "Фонарь успешно выключен\n\n" + getDeviceStatus(lightId);
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка выключения фонаря: ";
@@ -263,7 +288,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light off. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/off");
             log.error("Headers: {}", createHeaders());
             return "Ошибка выключения фонаря: " + e.getMessage();
         }
