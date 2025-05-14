@@ -23,7 +23,7 @@ public class RightechService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final int MAX_MESSAGE_LENGTH = 1000; // Значительно уменьшаем лимит
     private static final int MAX_DEVICES_PER_MESSAGE = 3; // Уменьшаем количество устройств в сообщении
-    private static final String MODEL_ID = "682304b420b46dbb6c1f6af5"; // ID модели устройства
+    private static final String MODEL_ID = "682304b420b46dbb6c1f6af6"; // ID модели устройства
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -218,7 +218,7 @@ public class RightechService {
     public String turnLightOn(String lightId) {
         try {
             // Используем эндпоинт команд с идентификатором модели
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/on";
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + "/ON";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -258,7 +258,7 @@ public class RightechService {
     public String turnLightOff(String lightId) {
         try {
             // Используем эндпоинт команд с идентификатором модели
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/off";
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + "/OFF";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
