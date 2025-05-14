@@ -217,8 +217,8 @@ public class RightechService {
 
     public String turnLightOn(String lightId) {
         try {
-            // Используем эндпоинт команд с идентификатором модели
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + "/ON";
+            // Используем эндпоинт команд
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -249,7 +249,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light on. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/on");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/ON");
             log.error("Headers: {}", createHeaders());
             return "Ошибка включения фонаря: " + e.getMessage();
         }
@@ -257,8 +257,8 @@ public class RightechService {
 
     public String turnLightOff(String lightId) {
         try {
-            // Используем эндпоинт команд с идентификатором модели
-            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + "/OFF";
+            // Используем эндпоинт команд
+            String url = rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF";
             log.info("Making POST request to URL: {}", url);
             log.debug("Full request details:");
             log.debug("URL: {}", url);
@@ -288,7 +288,7 @@ public class RightechService {
             }
         } catch (Exception e) {
             log.error("Error turning light off. Full request details:", e);
-            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/" + MODEL_ID + "/off");
+            log.error("URL: {}", rightechConfig.getApiUrl() + "/v1/objects/" + lightId + "/commands/OFF");
             log.error("Headers: {}", createHeaders());
             return "Ошибка выключения фонаря: " + e.getMessage();
         }
