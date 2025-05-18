@@ -58,7 +58,7 @@ public class RightechService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 // После успешной команды ждем немного и проверяем состояние
                 Thread.sleep(1000);
-                return "Фонарь успешно включен на 100% яркости\n\n" + getDeviceStatus(lightId);
+                return "Фонарь успешно включен на 100% яркости\n\n"; // + getDeviceStatus(lightId);
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка включения фонаря: ";
@@ -97,7 +97,7 @@ public class RightechService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 // После успешной команды ждем немного и проверяем состояние
                 Thread.sleep(1000);
-                return "Фонарь успешно выключен\n\n" + getDeviceStatus(lightId);
+                return "Фонарь успешно выключен\n\n"; // + getDeviceStatus(lightId);
             } else {
                 JSONObject errorResponse = new JSONObject(response.getBody());
                 String errorMessage = "Ошибка выключения фонаря: ";
@@ -184,24 +184,21 @@ public class RightechService {
                                 }
                             }
                             
-//                            status.append("\n💡 Состояние фонаря:\n");
-//
-//                            // Основные параметры лампы
-//                            if (payload.has("brightness")) {
-//                                status.append(String.format("Яркость: %d%%\n", payload.optInt("brightness", 0)));
-//                            }
-//                            if (payload.has("lux")) {
-//                                status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
-//                            }
-//                            if (payload.has("lamp_life")) {
-//                                status.append(String.format("Ресурс лампы: %.2f часов\n", payload.optDouble("lamp_life", 0.0)));
-//                            }
-//                            if (payload.has("power")) {
-//                                status.append(String.format("Питание: %s\n", payload.optBoolean("power", false) ? "включено" : "выключено"));
-//                            }
-//                            if (payload.has("motion")) {
-//                                status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
-//                            }
+                            status.append("\n💡 Состояние фонаря:\n");
+
+                            // Основные параметры лампы
+                            if (payload.has("brightness")) {
+                                status.append(String.format("Яркость: %d \n", payload.optInt("brightness", 0)));
+                            }
+                            if (payload.has("lux")) {
+                                status.append(String.format("Освещенность: %d lux\n", payload.optInt("lux", 0)));
+                            }
+                            if (payload.has("lamp_life")) {
+                                status.append(String.format("Ресурс лампы: %.2f секунд\n", payload.optDouble("lamp_life", 0.0)));
+                            }
+                            if (payload.has("motion")) {
+                                status.append(String.format("Движение: %s\n", payload.optBoolean("motion", false) ? "есть" : "нет"));
+                            }
                             
                         } catch (Exception e) {
                             log.error("Error parsing state payload: {} for payload: {}", e.getMessage(), state.optString("payload"));
